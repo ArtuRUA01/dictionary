@@ -1,8 +1,7 @@
 import psycopg2
 import pandas as pd
 import random
-from langdetect import detect
-
+from textblob import TextBlob
 
 try:
 	conn = psycopg2.connect(
@@ -30,13 +29,13 @@ def select_from_table():
     cur.execute('SELECT * FROM dict')
     rows = cur.fetchall()
     for row in rows:
+        print(row)
         answer.append(row)
     return answer
 
 
-def translate():
-    word = input('Enter word: ')
-    lang_detect_word = detect(word)
+def translate(word):
+    lang_detect_word = TextBlob(word).detect_language()
     if lang_detect_word == 'uk' or lang_detect_word == 'ru':
         cur.execute(r"SELECT ukrainian_word,english_word FROM dict WHERE ukrainian_word = '{}';".format(word.lower()))
     else:
@@ -58,25 +57,25 @@ def change_word():
  
 
 def task():
-    english_words = []
-    ukrainian_words = []
+    number = int(input('Enter the number of words: '))
     cur.execute('SELECT * FROM dict')
     rows = cur.fetchall()
-    len_rows = len(rows)
+    words = []
     for row in rows:
-        english_words.append(row[1])
-        ukrainian_words.append(row[2])
-    for index_word in range(2):
-        question_list = random.randint(0,1)
-        if question_list==0:
-            question_list = english_words
+        words.append(row[1])
+        words.append(row[2])
+    #print(words)
+    for _ in range(number):
+        question_word = random.choice(words)
+        #print('question_word: ', question_word)
+        #print(translate(question_word))
+        answer_word = input('Translate word {}: '.format(question_word))
+        translate_word = translate(question_word)
+        if (answer_word==translate_word[0] or answer_word==translate_word[1]) and (question_word!=answer_word):
+            print('RIGHT')
         else:
-            question_list = ukrainian_words
-        print(question_list)
-        word = random.choice(question_list)
-        print(word)
-        : = input('Enter translate this word "{}": '.format(word))
-
+            print('WRONG')
+            print(translate(question_word))
 
 
 def show():
@@ -95,19 +94,18 @@ if __name__=='__main__':
         show()
         action = int(input('Enter action (number): '))
         if action == 1: 
-            print( select_from_table())
+            select_from_table()
         elif action == 2:
             print(insert_into_table())
         elif action == 3:
-            print(translate())
+            word = input('Enter word: ')
+            print(translate(word))
         elif action == 4:
             print(change_word())
         elif action == 5:
-            print(task())
+            task()
         elif action == 6:
             action = 'exit'
-
-
 
 
 
